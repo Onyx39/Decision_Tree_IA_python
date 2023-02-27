@@ -4,16 +4,12 @@ from classes.Noeud import Noeud
 from classes.Arbre import Arbre
 
 
-
-df = pd.read_csv("data/tennis.csv")
-
 def trouver_premier_attribut (df, nom_colonne_classes) :
     total = len(df)
     classes = trouver_classes(df, nom_colonne_classes)
     attributs = list(df.columns)
-    attributs.remove('day')
-    attributs.remove('play')
-    entropie_dataset = calcul_entropie_dataset(df)
+    attributs.remove(nom_colonne_classes)
+    entropie_dataset = calcul_entropie_dataset(df, nom_colonne_classes)
 
 
     entropies = [0]*len(attributs)
@@ -48,9 +44,9 @@ def trouver_premier_attribut (df, nom_colonne_classes) :
             v1 = occurences_totales[i[1]][j][0]
             v2 = occurences_totales[i[1]][j][1]
             if v1 == 0.0 :
-                v1 = 0.0001
+                v1 = 0.000001
             if v2 == 0.0 :
-                v2 = 0.0001  
+                v2 = 0.000001  
 
             entropie_variable -= ((v1+v2)/total)*(-v1/(v1+v2)*log2(v1/(v1+v2)) - v2/(v1+v2)*log2(v2/(v1+v2)))
         
@@ -60,8 +56,12 @@ def trouver_premier_attribut (df, nom_colonne_classes) :
     return resultat, list(occurences_totales[resultat].keys())
 
 
-def initialiser_arbre (df) :
-    racine, enfants = trouver_premier_attribut(df, 'play')
+def initialiser_arbre (df, nom_colonne_classes, colonnes_a_retirer = None) :
+    if colonnes_a_retirer != None :
+        for i in colonnes_a_retirer :
+            df = df.drop(i, axis=1)
+    #print(df)
+    racine, enfants = trouver_premier_attribut(df, nom_colonne_classes)
     print(racine, enfants)
 
     arbre = Arbre(Noeud(racine))
@@ -71,10 +71,11 @@ def initialiser_arbre (df) :
 
 
 
-def calcul_entropie_dataset (df) :
+def calcul_entropie_dataset (df, colonne_classe) :
     classes = trouver_classes(df, str(list(df.columns)[-1]))
     occurences = [0]*len(classes)
-    classe = str(list(df.columns)[-1])
+    # classe = str(list(df.columns)[-1])
+    classe = colonne_classe
     for i in df[classe] :
         index = classes.index(i)
         occurences[index] += 1
@@ -96,13 +97,15 @@ def trouver_classes (df, nom_colonne) :
             liste.append(i)
     return liste
 
-label = trouver_premier_attribut(df, 'play')[0]
 
-n1 = Noeud(label)
-# print(n1)
+def main (lien_data, colonne_classes, colonnes_a_supprimer) :
+    print("\n")
+    df = pd.read_csv(lien_data)
+    initialiser_arbre(df, colonne_classes, colonnes_a_supprimer)
+    print("\n")
 
-# n1.ajouter_enfant("coucou")
-# print(n1.enfants)
-# print(n1.enfants[0])
 
-initialiser_arbre(df)
+### MAIN ### 
+
+if __name__ == "__main__" :
+    main("data/tennis.csv", "play", ['day'])
